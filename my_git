@@ -1,0 +1,3 @@
+#!/usr/bin/env python3
+import mini_git
+mini_git.main()
