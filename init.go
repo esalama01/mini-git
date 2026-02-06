@@ -1,9 +1,11 @@
 package main
 import(
 	"fmt"
-	"io/fs"
+	"strconv"
+	//"io/fs"
 	"os"
-	"path/filepath"
+	"log"
+	//"path/filepath"
 	"gopkg.in/ini.v1"
 )
 
@@ -19,43 +21,91 @@ func mkdirrr(){
 	check(err)
 
 	//creating the hooks subd
-	err := os.MkdirAll(".git/hooks", 0755)
+	err = os.MkdirAll(".git/hooks", 0755)
 	check(err)
 
 	//creating the info subd
-	err := os.MkdirAll(".git/info", 0755)
+	err = os.MkdirAll(".git/info", 0755)
 	check(err)
 
 	//creating the objects subd
-	err := os.MkdirAll(".git/objects", 0755)
+	err = os.MkdirAll(".git/objects", 0755)
 	check(err)
 
 	//creating the refs subd
-	err := os.MkdirAll(".git/refs", 0755)
+	err = os.MkdirAll(".git/refs", 0755)
 	check(err)
-
 }
 
 func create(){
 	//creating the HEAD file (empty)
 	file_name := "HEAD"
-	file, err := os.Create(file_name)
-	check(e)
+	_, err := os.Create(file_name)
+	check(err)
 
 	//creating the config file (empty)
-	file_name := "config"
-	file, err := os.Create(file_name)
-	check(e)
+	file_name = "config.ini"
+	_, err = os.Create(file_name)
+	check(err)
 	
 	//creating the description file (empty)
-	file_name := "description"
-	file, err := os.Create(file_name)
-	check(e)
+	file_name = "description"
+	_, err = os.Create(file_name)
+	check(err)
 }
 
-func HEAD(){
+func HEAD(file *os.File){
+	cfg, err := ini.Load(file)
+	if err != nil{
+		log.Fatalf("Something's wrong with the config file.")
+	}
+/*
+	core_section := cfg.Section("core")
+	core_section.Key("repositoryformatversion").SetValue(0)
+	core_section.Key("filemode").SetValue(true)
+	core_section.Key("bare").SetValue(false)
+	core_section.Key("logallrefupdates").SetValue(true)
+*/
+	//creating the core section
+	newSection, err := cfg.NewSection("core")
+	if err != nil{
+		log.Fatalf("Cannot create the new section.")
+	}
+	//adding mappings between keys and values.
+	_, err = newSection.NewKey("repositoryformatversion", strconv.Itoa(0))
+	if err != nil {
+		log.Fatalf("Fail to add new key to new section: %v", err)
+	}
 	
+	_, err = newSection.NewKey("filemode", strconv.FormatBool(true))
+	if err != nil {
+		log.Fatalf("Fail to add new key to new section: %v", err)
+	}
+
+	_, err = newSection.NewKey("bare", strconv.FormatBool(false))
+	if err != nil {
+		log.Fatalf("Fail to add new key to new section: %v", err)
+	}
+
+	_, err = newSection.NewKey("logallrefupdates",strconv.FormatBool(true))
+	if err != nil {
+		log.Fatalf("Fail to add new key to new section: %v", err)
+	}
+
+	if err := cfg.SaveTo("config.ini"); err != nil{
+		log.Fatalf("Failed to save the configuration file.")
+	}
 }
+
+func description(file *os.File){
+	data := []byte("Unnamed repository; edit this file 'description' to name the repository.")
+	err := os.WriteFile(file.Name(), data, 0644)
+	if err != nil{
+		log.Fatalf("Couldn't write data to the description file.")
+	}
+}
+
+
 
 func main(){
 
